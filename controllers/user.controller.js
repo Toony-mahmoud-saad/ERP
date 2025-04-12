@@ -26,9 +26,10 @@ exports.register = async (req , res) => {
 
 exports.login = async (req , res) => {
   try {
-    const user = await userDB.findOne({email: req.email});
+    const {email, password} = req.body;
+    const user = await userDB.findOne({email});
     if(!user) res.status(400).json({message: "email or password not correct"});
-    const isMatch = await bcrypt.compare(req.body.password, user.password);
+    const isMatch = await bcrypt.compare(password, user.password);
     if(!isMatch) res.status(400).json({message: "email or password not correct"});
     const token = jwt.sign({_id: user._id, name: user.name, role: user.role },process.env.SECRET_KEY);
     res.status(200).json({message: "login successfully", token: token})
