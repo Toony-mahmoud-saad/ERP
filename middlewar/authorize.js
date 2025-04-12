@@ -2,11 +2,11 @@ const jwt = require("jsonwebtoken");
 
 module.exports = (req, res, next) => {
   try {
-    const fullToken = req.headers.authorization.replace("Bearer ", '') // come with token
+    const token = req.headers.authorization.replace("Bearer ", '') // come with token
 
     if(!token) res.status(403).send("Invalid Token"); // if not exist token
 
-    const decodedToken = jwt.verify(token,'secretKey') // decode token to json
+    const decodedToken = jwt.verify(token,process.env.SECRET_KEY) // decode token to json
 
     req.user = decodedToken; // put json data in req.user, "user" can change put will use it in controller
 
