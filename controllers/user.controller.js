@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken")
 
 exports.register = async (req , res) => {
   try {
-    if(user.req.role === "admin"){
+    if(req.user.role === "admin"){
       const newUser = new userDB(req.body);
       const hashedPssword = await bcrypt.hash(newUser.password, 10);
       newUser.password = hashedPssword;
@@ -28,7 +28,7 @@ exports.login = async (req , res) => {
   try {
     const user = await userDB.findOne({email: req.email});
     if(!user) res.status(400).json({message: "email or password not correct"});
-    const isMatch = bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(req.body.password, user.password);
     if(!isMatch) res.status(400).json({message: "email or password not correct"});
     const token = jwt.sign({_id: user._id, name: user.name, role: user.role },process.env.SECRET_KEY);
     res.status(200).json({message: "login successfully", token: token})
