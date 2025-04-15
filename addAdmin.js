@@ -34,7 +34,10 @@ const addAdmin = async () => {
     await admin.save();
 
     // create token
-    const token = jwt.sign({_id: admin._id, name: admin.name, role: admin.role },process.env.SECRET_KEY)
+    const token = jwt.sign(
+      { _id: admin._id, name: admin.name, role: admin.role },
+      process.env.SECRET_KEY
+    );
 
     console.log("Admin user created successfully.");
     console.log("token: ", token);
@@ -42,6 +45,5 @@ const addAdmin = async () => {
     console.error("Error creating admin user:", error);
   }
 };
-
 
 module.exports = addAdmin;

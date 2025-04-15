@@ -18,6 +18,3 @@ git branch -M main
 git push -u origin main
 
 
-Admin token:
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2N2Y5Zjc4MGEzNTZiMzMwZTY0N2Q5MTciLCJuYW1lIjoiYWRtaW4iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NDQ0MzUwNzJ9.hknpzPhkHYrZBrlPVSa8j9xHL4b6VrjIs9VFh_FBmCU
-
