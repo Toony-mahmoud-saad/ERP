@@ -87,10 +87,10 @@ const getPayrollById = asyncHandler(async (req, res) => {
   }
 
   // التحقق من الصلاحيات
-  const isEmployeeOwner = req.user.employeeId && req.user.employeeId.toString() === payroll.employee._id.toString();
-  const isAdminOrHR = req.user.role === 'admin' || req.user.role === 'hr';
+  // const isEmployeeOwner = req.user._id === payroll.employee._id;
+  const isAdminOrHROrEmployee = req.user.role === 'admin' || req.user.role === 'hr' || req.user.role === 'employee';
 
-  if (!isAdminOrHR && !isEmployeeOwner) {
+  if (!isAdminOrHROrEmployee) {
     res.status(403);
     throw new Error('غير مصرح لك بالوصول إلى هذه البيانات');
   }

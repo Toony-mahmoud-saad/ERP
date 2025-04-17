@@ -7,10 +7,10 @@ router.route('/')
   .post(authorize, payrollController.createPayroll);
 
 router.route('/employee/:id')
-  .get(payrollController.getEmployeePayrolls);
+  .get(authorize, payrollController.getEmployeePayrolls);
 
 router.route('/:id')
-  .get(payrollController.getPayrollById);
+  .get(authorize, payrollController.getPayrollById);
 
 router.put('/:id/pay', authorize, payrollController.markPayrollAsPaid);
 router.get('/report/monthly', authorize, payrollController.getMonthlyPayrollReport);

@@ -7,7 +7,8 @@ const asyncHandler = require('express-async-handler');
 // @access  Private
 const createLeaveRequest = asyncHandler(async (req, res) => {
   const { startDate, endDate, type, reason } = req.body;
-  const employeeId = req.user.employeeId;
+  let {id} = req.params
+  const employeeId = id;
 
   const employee = await Employee.findById(employeeId);
   if (!employee) {
@@ -144,23 +145,14 @@ const updateLeaveRequest = asyncHandler(async (req, res) => {
 // @route   DELETE /api/leaves/:id
 // @access  Private/Admin-HR أو الموظف نفسه (إذا كان الطلب معلقًا)
 const deleteLeaveRequest = asyncHandler(async (req, res) => {
-  const leaveRequest = await Leave.findById(req.params.id);
-  if (!leaveRequest) {
-    res.status(404);
-    throw new Error('طلب الإجازة غير موجود');
+  try {
+    let {id} = req.params;
+    let leave = await Leave.findByIdAndDelete(id);
+    res.json({ message: 'تم حذف طلب الإجازة بنجاح' });
+  } catch (error) {
+    res.status(400).json({message: error.message})
   }
 
-  // التحقق من الصلاحيات
-  const isEmployeeOwner = req.user.employeeId && req.user.employeeId.toString() === leaveRequest.employee.toString();
-  const isAdminOrHR = req.user.role === 'admin' || req.user.role === 'hr';
-
-  if (!isAdminOrHR && (!isEmployeeOwner || leaveRequest.status !== 'pending')) {
-    res.status(403);
-    throw new Error('غير مصرح لك بحذف هذا الطلب');
-  }
-
-  await leaveRequest.remove();
-  res.json({ message: 'تم حذف طلب الإجازة بنجاح' });
 });
 
 module.exports = {

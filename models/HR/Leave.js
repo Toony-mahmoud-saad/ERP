@@ -16,7 +16,7 @@ const leaveSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['annual', 'sick', 'unpaid', 'maternity', 'paternity'],
+    enum: ['annual', 'sick', 'unpaid', 'maternity', 'paternity'], // ['سنوي'، 'مرضي'، 'غير مدفوع الأجر'، 'أمومة'، 'أبوة']،
     required: true
   },
   reason: {
@@ -25,7 +25,7 @@ const leaveSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'approved', 'rejected'],
+    enum: ['pending', 'approved', 'rejected'], // ['معلق'، 'موافق عليه'، 'مرفوض']
     default: 'pending'
   },
   approvedBy: {

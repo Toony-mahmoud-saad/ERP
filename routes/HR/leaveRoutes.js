@@ -5,10 +5,12 @@ const authorize = require('../../middlewar/authorize');
 
 router.route('/')
   .get(authorize, leaveController.getAllLeaves)
+
+  router.route('/:id')
   .post(leaveController.createLeaveRequest);
 
 router.route('/employee/:id')
-  .get(leaveController.getEmployeeLeaves);
+  .get(authorize, leaveController.getEmployeeLeaves);
 
 router.route('/:id')
   .put(leaveController.updateLeaveRequest)
