@@ -18,7 +18,12 @@ const addAdmin = async () => {
     // Check if admin already exists
     const existingAdmin = await User.findOne({ email: adminData.email });
     if (existingAdmin) {
-      console.log("Admin already exists.");
+      // create token
+      const token = jwt.sign(
+      { _id: existingAdmin._id, name: existingAdmin.name, role: existingAdmin.role },
+      process.env.SECRET_KEY
+      );
+      console.log("Admin already exists, and his token\n"+token);
       return;
     }
 
