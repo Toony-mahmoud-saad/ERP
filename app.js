@@ -26,6 +26,20 @@ app.use('/api/attendance', require('./routes/HR/attendanceRoutes'));
 app.use('/api/leaves', require('./routes/HR/leaveRoutes'));
 app.use('/api/payroll', require('./routes/HR/payrollRoutes'));
 
+
+//! Inventory Routes
+app.use('/api/products', require('./routes/Inventory/productRoutes'));
+app.use('/api/transactions', require('./routes/Inventory/transactionRoutes'));
+app.use('/api/alerts', require('./routes/Inventory/alertRoutes'));
+app.use('/api/suppliers', require('./routes/Inventory/supplierRoutes'));
+
+//! Accounting Routes
+app.use('/api/invoices', require('./routes/Accounting/invoiceRoutes'));
+app.use('/api/transactions', require('./routes/Accounting/transactionRoutes'));
+app.use('/api/expenses', require('./routes/Accounting/expenseRoutes'));
+app.use('/api/reports', require('./routes/Accounting/reportRoutes'));
+
+
 //! if router url not exist
 app.use((req , res)=> res.status(404).json({Uri: req.originalUrl + " not found"}));
 
