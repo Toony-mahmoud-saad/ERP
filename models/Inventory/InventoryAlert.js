@@ -16,7 +16,7 @@ const alertSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['active', 'resolved', 'ignored'],
+    enum: ['active', 'resolved', 'ignored'], // ['نشط'، 'محلول'، 'متجاهل']
     default: 'active'
   },
   resolvedBy: {
@@ -24,7 +24,7 @@ const alertSchema = new mongoose.Schema({
     ref: 'userDB'
   },
   resolvedAt: {
-    type: Date
+    type: Date,
   },
   createdAt: {
     type: Date,

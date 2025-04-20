@@ -1,5 +1,5 @@
 const InventoryAlert = require('../../models/Inventory/InventoryAlert');
-const Product = require('../../models/Inventory/Product');
+// const Product = require('../../models/Inventory/Product');
 const asyncHandler = require('express-async-handler');
 
 // @desc    الحصول على جميع تنبيهات المخزون
@@ -37,7 +37,7 @@ const updateAlertStatus = asyncHandler(async (req, res) => {
 
   alert.status = status || alert.status;
   
-  if (status === 'resolved') {
+  if (status === 'resolved' || status === "ignored") {
     alert.resolvedBy = req.user.id;
     alert.resolvedAt = new Date();
   } else if (status === 'active') {
@@ -46,7 +46,7 @@ const updateAlertStatus = asyncHandler(async (req, res) => {
   }
 
   const updatedAlert = await alert.save();
-  res.json(updatedAlert);
+  res.json({updatedAlert});
 });
 
 // @desc    حل جميع التنبيهات النشطة

@@ -39,10 +39,10 @@ const createTransaction = asyncHandler(async (req, res) => {
   // إنشاء حركة المخزون
   const transaction = await InventoryTransaction.create({
     product,
-    quantity: type === 'sale' ? -Math.abs(quantity) : Math.abs(quantity),
+    quantity,
     type,
     reference,
-    user: req.user.id,
+    user: req.user._id,
     notes
   });
 
@@ -98,7 +98,7 @@ const getAllTransactions = asyncHandler(async (req, res) => {
     .populate('user', 'name role')
     .sort({ date: -1 });
 
-  res.json(transactions);
+  res.json({transactions: transactions});
 });
 
 // @desc    الحصول على حركة مخزون بواسطة ID

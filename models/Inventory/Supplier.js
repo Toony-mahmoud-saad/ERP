@@ -6,10 +6,10 @@ const supplierSchema = new mongoose.Schema({
     required: [true, 'الرجاء إدخال اسم المورد'],
     trim: true
   },
-  contactPerson: {
-    type: String,
-    required: [true, 'الرجاء إدخال اسم الشخص المسؤول']
-  },
+  // contactPerson: {
+  //   type: String,
+  //   required: [true, 'الرجاء إدخال اسم الشخص المسؤول']
+  // },
   email: {
     type: String,
     required: [true, 'الرجاء إدخال البريد الإلكتروني'],
@@ -24,23 +24,24 @@ const supplierSchema = new mongoose.Schema({
     type: String,
     required: [true, 'الرجاء إدخال العنوان']
   },
-  taxNumber: {
-    type: String,
-    required: [true, 'الرجاء إدخال الرقم الضريبي']
-  },
+  // taxNumber: {
+  //   type: String,
+  //   required: [true, 'الرجاء إدخال الرقم الضريبي']
+  // },
   paymentTerms: {
     type: Number,
     default: 30,
     min: [0, 'لا يمكن أن تكون شروط الدفع سلبية']
   },
-  accountNumber: {
-    type: String
-  },
+  // accountNumber: {
+  //   type: String
+  // },
   bankName: {
     type: String
   },
   notes: {
-    type: String
+    type: String,
+    default: ''
   },
   createdAt: {
     type: Date,

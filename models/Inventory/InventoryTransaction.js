@@ -13,12 +13,15 @@ const transactionSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['purchase', 'sale', 'adjustment', 'return'],
+    enum: ['purchase', 'sale', 'adjustment', 'return'], // ['شراء'، 'بيع'، 'تعديل'، 'إرجاع']
     required: [true, 'الرجاء تحديد نوع العملية']
   },
   reference: {
     type: String,
-    required: [true, 'الرجاء إدخال المرجع']
+    required: [true, 'الرجاء إدخال المرجع'],
+    default: function () {
+      return `${this.type}-${this.product}-${new Date().toISOString().split('T')[0]}`;
+    }
   },
   user: {
     type: mongoose.Schema.Types.ObjectId,
@@ -26,7 +29,8 @@ const transactionSchema = new mongoose.Schema({
     required: [true, 'الرجاء تحديد المستخدم']
   },
   notes: {
-    type: String
+    type: String,
+    default: ''
   },
   date: {
     type: Date,

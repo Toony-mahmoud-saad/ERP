@@ -15,13 +15,13 @@ const getAllSuppliers = asyncHandler(async (req, res) => {
 const createSupplier = asyncHandler(async (req, res) => {
   const {
     name,
-    contactPerson,
+    // contactPerson,
     email,
     phone,
     address,
-    taxNumber,
+    // taxNumber,
     paymentTerms,
-    accountNumber,
+    // accountNumber,
     bankName,
     notes
   } = req.body;
@@ -35,13 +35,13 @@ const createSupplier = asyncHandler(async (req, res) => {
 
   const supplier = await Supplier.create({
     name,
-    contactPerson,
+    // contactPerson,
     email,
     phone,
     address,
-    taxNumber,
+    // taxNumber,
     paymentTerms,
-    accountNumber,
+    // accountNumber,
     bankName,
     notes
   });
@@ -71,13 +71,13 @@ const updateSupplier = asyncHandler(async (req, res) => {
 
   if (supplier) {
     supplier.name = req.body.name || supplier.name;
-    supplier.contactPerson = req.body.contactPerson || supplier.contactPerson;
+    // supplier.contactPerson = req.body.contactPerson || supplier.contactPerson;
     supplier.email = req.body.email || supplier.email;
     supplier.phone = req.body.phone || supplier.phone;
     supplier.address = req.body.address || supplier.address;
-    supplier.taxNumber = req.body.taxNumber || supplier.taxNumber;
+    // supplier.taxNumber = req.body.taxNumber || supplier.taxNumber;
     supplier.paymentTerms = req.body.paymentTerms || supplier.paymentTerms;
-    supplier.accountNumber = req.body.accountNumber || supplier.accountNumber;
+    // supplier.accountNumber = req.body.accountNumber || supplier.accountNumber;
     supplier.bankName = req.body.bankName || supplier.bankName;
     supplier.notes = req.body.notes || supplier.notes;
 
@@ -96,15 +96,7 @@ const deleteSupplier = asyncHandler(async (req, res) => {
   const supplier = await Supplier.findById(req.params.id);
 
   if (supplier) {
-    // التحقق من عدم وجود منتجات مرتبطة بهذا المورد
-    const productsCount = await Product.countDocuments({ supplier: supplier._id });
-    
-    if (productsCount > 0) {
-      res.status(400);
-      throw new Error('لا يمكن حذف المورد لأنه مرتبط بمنتجات');
-    }
-
-    await supplier.remove();
+    await Supplier.findByIdAndDelete(req.params.id);
     res.json({ message: 'تم حذف المورد بنجاح' });
   } else {
     res.status(404);

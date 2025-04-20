@@ -10,17 +10,19 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: [true, 'الرجاء إدخال وصف المنتج']
   },
-  sku: {
+  sku: { // Automatically generated SKU
     type: String,
-    required: [true, 'الرجاء إدخال SKU'],
-    unique: true
+    unique: true,
+    default: function () {
+      return `SKU-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    }
   },
-  barcode: {
+  barcode: { // optional 'sparse' allow null or undefined
     type: String,
     unique: true,
     sparse: true
   },
-  rfid: {
+  rfid: { // similar to barcode
     type: String,
     unique: true,
     sparse: true

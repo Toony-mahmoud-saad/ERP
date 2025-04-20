@@ -1,5 +1,6 @@
 const Product = require('../../models/Inventory/Product');
 const InventoryAlert = require('../../models/Inventory/InventoryAlert');
+const InventoryTransaction = require('../../models/Inventory/InventoryTransaction');
 const asyncHandler = require('express-async-handler');
 
 // @desc    الحصول على جميع المنتجات
@@ -77,7 +78,7 @@ const createProduct = asyncHandler(async (req, res) => {
     });
   }
 
-  res.status(201).json(product);
+  res.status(201).json({Message: "Product creatrd ✅" ,Data: product});
 });
 
 // @desc    الحصول على منتج بواسطة ID
@@ -144,7 +145,7 @@ const deleteProduct = asyncHandler(async (req, res) => {
   const product = await Product.findById(req.params.id);
 
   if (product) {
-    await product.remove();
+    await Product.findByIdAndDelete(product.id);
     await InventoryAlert.deleteMany({ product: product._id });
     res.json({ message: 'تم حذف المنتج بنجاح' });
   } else {
