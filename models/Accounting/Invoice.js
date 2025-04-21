@@ -51,25 +51,10 @@ const invoiceSchema = new mongoose.Schema({
       min: [0, 'نسبة الضريبة لا يمكن أن تكون سلبية']
     }
   }],
-  subtotal: {
-    type: Number,
-    required: true,
-    min: [0, 'المجموع الفرعي لا يمكن أن يكون سلبياً']
-  },
-  taxAmount: {
-    type: Number,
-    default: 0,
-    min: [0, 'قيمة الضريبة لا يمكن أن تكون سلبية']
-  },
   discount: {
     type: Number,
     default: 0,
     min: [0, 'الخصم لا يمكن أن يكون سلبياً']
-  },
-  total: {
-    type: Number,
-    required: true,
-    min: [0, 'الإجمالي لا يمكن أن يكون سلبياً']
   },
   paidAmount: {
     type: Number,
@@ -100,13 +85,22 @@ const invoiceSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-// Middleware لحساب المجموع الفرعي والضريبة والإجمالي قبل الحفظ
+// Virtual fields for automatic calculations
+invoiceSchema.virtual('subtotal').get(function() {
+  return this.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+});
+
+invoiceSchema.virtual('taxAmount').get(function() {
+  return this.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice * item.taxRate / 100), 0);
+});
+
+invoiceSchema.virtual('total').get(function() {
+  return this.subtotal + this.taxAmount - this.discount;
+});
+
+// Middleware to update the status before saving
 invoiceSchema.pre('save', function(next) {
-  this.subtotal = this.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
-  this.taxAmount = this.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice * item.taxRate / 100), 0);
-  this.total = this.subtotal + this.taxAmount - this.discount;
-  
-  // تحديث حالة الدفع
+  // Update payment status
   if (this.paidAmount >= this.total) {
     this.status = 'paid';
   } else if (this.paidAmount > 0) {
@@ -117,5 +111,9 @@ invoiceSchema.pre('save', function(next) {
   
   next();
 });
+
+// Ensure virtual fields are included in JSON and Object responses
+invoiceSchema.set('toJSON', { virtuals: true });
+invoiceSchema.set('toObject', { virtuals: true });
 
 module.exports = mongoose.model('Invoice', invoiceSchema);

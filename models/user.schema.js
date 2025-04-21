@@ -19,7 +19,7 @@ const userSchema = mongoose.Schema({
     default: Date.now,
   },
 
-  role: {type: String, enum: ["admin", "accountant", "hr", "inventory_keeper", "employee"], required: true}
+  role: {type: String, enum: ["admin", "accountant", "hr", "inventory_keeper"], required: true}
 })
 
 module.exports = mongoose.model("userDB", userSchema);

@@ -6,7 +6,7 @@ const asyncHandler = require('express-async-handler');
 // @route   POST /api/invoices
 // @access  Private/Admin/Accountant
 const createInvoice = asyncHandler(async (req, res) => {
-  const { type, party, partyType, items, discount, paymentMethod, notes, dueDate } = req.body;
+  const { type, party, partyType, items, subtotal, discount, paymentMethod, notes, dueDate } = req.body;
 
   // توليد رقم فاتورة تلقائي
   const lastInvoice = await Invoice.findOne().sort({ createdAt: -1 });
@@ -18,11 +18,12 @@ const createInvoice = asyncHandler(async (req, res) => {
     party,
     partyType,
     items,
+    subtotal,
     discount: discount || 0,
     paymentMethod,
     notes,
     dueDate: new Date(dueDate),
-    createdBy: req.user.id
+    createdBy: req.user._id
   });
 
   res.status(201).json(invoice);
@@ -87,7 +88,7 @@ const updateInvoice = asyncHandler(async (req, res) => {
     invoice.items = req.body.items || invoice.items;
     invoice.discount = req.body.discount || invoice.discount;
     invoice.notes = req.body.notes || invoice.notes;
-    invoice.updatedBy = req.user.id;
+    invoice.updatedBy = req.user._id;
 
     const updatedInvoice = await invoice.save();
     res.json(updatedInvoice);
@@ -138,7 +139,7 @@ const recordPayment = asyncHandler(async (req, res) => {
     paymentMethod,
     reference,
     notes,
-    recordedBy: req.user.id
+    recordedBy: req.user._id
   });
 
   // تحديث الفاتورة
