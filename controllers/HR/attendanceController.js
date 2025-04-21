@@ -6,10 +6,13 @@ const asyncHandler = require('express-async-handler');
 // @route   POST /api/attendance/checkin
 // @access  Private
 const checkIn = asyncHandler(async (req, res) => {
-  let {id} = req.params;
-  const employeeId = id;
+  const employeeId = req.user.employeeId;
 
-  // التحقق من أن الموظف موجود
+  if (!employeeId) {
+    res.status(400);
+    throw new Error('لا يوجد موظف مرتبط بهذا الحساب');
+  }
+
   const employee = await Employee.findById(employeeId);
   if (!employee) {
     res.status(404);
@@ -36,7 +39,8 @@ const checkIn = asyncHandler(async (req, res) => {
   const attendance = await Attendance.create({
     employee: employeeId,
     checkIn: new Date(),
-    status: 'present'
+    status: 'present',
+    recordedBy: req.user.id
   });
 
   res.status(201).json(attendance);
@@ -46,10 +50,13 @@ const checkIn = asyncHandler(async (req, res) => {
 // @route   POST /api/attendance/checkout
 // @access  Private
 const checkOut = asyncHandler(async (req, res) => {
-  let {id} = req.params;
-  const employeeId = id;
+  const employeeId = req.user.employeeId;
 
-  // التحقق من أن الموظف موجود
+  if (!employeeId) {
+    res.status(400);
+    throw new Error('لا يوجد موظف مرتبط بهذا الحساب');
+  }
+
   const employee = await Employee.findById(employeeId);
   if (!employee) {
     res.status(404);
@@ -84,14 +91,57 @@ const checkOut = asyncHandler(async (req, res) => {
   res.json(attendance);
 });
 
+// @desc    تسجيل الحضور يدويًا (للمشرفين وموظفي HR)
+// @route   POST /api/attendance/manual
+// @access  Private/Admin/HR
+const manualAttendance = asyncHandler(async (req, res) => {
+  const { employeeId, date, checkIn, checkOut, status, notes } = req.body;
+
+  const employee = await Employee.findById(employeeId);
+  if (!employee) {
+    res.status(404);
+    throw new Error('الموظف غير موجود');
+  }
+
+  // تحديد تاريخ الحضور
+  const attendanceDate = date ? new Date(date) : new Date();
+  attendanceDate.setHours(0, 0, 0, 0);
+
+  // التحقق من عدم وجود سجل حضور لنفس اليوم
+  const existingAttendance = await Attendance.findOne({
+    employee: employeeId,
+    date: {
+      $gte: attendanceDate,
+      $lt: new Date(attendanceDate.getTime() + 24 * 60 * 60 * 1000)
+    }
+  });
+
+  if (existingAttendance) {
+    res.status(400);
+    throw new Error('يوجد سجل حضور مسبق لنفس اليوم');
+  }
+
+  const attendance = await Attendance.create({
+    employee: employeeId,
+    date: attendanceDate,
+    checkIn: checkIn ? new Date(checkIn) : null,
+    checkOut: checkOut ? new Date(checkOut) : null,
+    status: status || 'present',
+    notes,
+    recordedBy: req.user.id
+  });
+
+  res.status(201).json(attendance);
+});
+
 // @desc    الحصول على سجل الحضور لموظف
 // @route   GET /api/attendance/employee/:id
-// @access  Private/Admin-HR أو الموظف نفسه
+// @access  Private
 const getEmployeeAttendance = asyncHandler(async (req, res) => {
   const employeeId = req.params.id;
 
   // التحقق من الصلاحيات
-  if (req.user.role !== 'admin' && req.user.role !== 'hr' && req.user._id.toString() !== employeeId) {
+  if (req.user.role !== 'admin' && req.user.role !== 'hr' && req.user.employeeId?.toString() !== employeeId) {
     res.status(403);
     throw new Error('غير مصرح لك بالوصول إلى هذه البيانات');
   }
@@ -111,31 +161,9 @@ const getEmployeeAttendance = asyncHandler(async (req, res) => {
   res.json(attendance);
 });
 
-// @desc    تحديث سجل الحضور (يدوي - للإداريين فقط)
-// @route   PUT /api/attendance/:id
-// @access  Private/Admin-HR
-const updateAttendance = asyncHandler(async (req, res) => {
-  const { checkIn, checkOut, status, notes } = req.body;
-
-  const attendance = await Attendance.findById(req.params.id);
-
-  if (!attendance) {
-    res.status(404);
-    throw new Error('سجل الحضور غير موجود');
-  }
-
-  attendance.checkIn = checkIn || attendance.checkIn;
-  attendance.checkOut = checkOut || attendance.checkOut;
-  attendance.status = status || attendance.status;
-  attendance.notes = notes || attendance.notes;
-
-  const updatedAttendance = await attendance.save();
-  res.json(updatedAttendance);
-});
-
 // @desc    تقرير الحضور الشهري
-// @route   GET /api/attendance/report
-// @access  Private/Admin-HR
+// @route   GET /api/attendance/report/monthly
+// @access  Private/Admin/HR
 const getMonthlyAttendanceReport = asyncHandler(async (req, res) => {
   const { month, year, department } = req.query;
 
@@ -164,6 +192,7 @@ const getMonthlyAttendanceReport = asyncHandler(async (req, res) => {
     const presentDays = attendanceRecords.filter(record => record.status === 'present').length;
     const absentDays = attendanceRecords.filter(record => record.status === 'absent').length;
     const lateDays = attendanceRecords.filter(record => record.status === 'late').length;
+    const leaveDays = attendanceRecords.filter(record => record.status === 'on_leave').length;
 
     report.push({
       employeeId: employee._id,
@@ -172,7 +201,8 @@ const getMonthlyAttendanceReport = asyncHandler(async (req, res) => {
       presentDays,
       absentDays,
       lateDays,
-      totalDays: new Date(year, month, 0).getDate()
+      leaveDays,
+      totalWorkingDays: new Date(year, month, 0).getDate()
     });
   }
 
@@ -182,7 +212,7 @@ const getMonthlyAttendanceReport = asyncHandler(async (req, res) => {
 module.exports = {
   checkIn,
   checkOut,
+  manualAttendance,
   getEmployeeAttendance,
-  updateAttendance,
   getMonthlyAttendanceReport
 };

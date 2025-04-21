@@ -1,82 +1,61 @@
 const Employee = require('../../models/HR/Employee');
 const asyncHandler = require('express-async-handler');
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
 
 // @desc    الحصول على جميع الموظفين
 // @route   GET /api/employees
-// @access  Private/Admin-HR
+// @access  Private/Admin/HR
 const getAllEmployees = asyncHandler(async (req, res) => {
-  const employees = await Employee.find({}).sort({ createdAt: -1 });
+  const { department, status } = req.query;
+  let query = {};
+
+  if (department) query.department = department;
+  if (status) query.status = status;
+
+  const employees = await Employee.find(query).sort({ fullName: 1 });
   res.json(employees);
 });
 
 // @desc    إنشاء موظف جديد
 // @route   POST /api/employees
-// @access  Private/Admin-HR
+// @access  Private/Admin/HR
 const createEmployee = asyncHandler(async (req, res) => {
-  let {
+  const {
     fullName,
-    jobTitle,
+    position,
     department,
     salary,
     idNumber,
     email,
-    password,
     phone,
     address,
-    emergencyContact
+    emergencyContact,
+    bankAccount,
+    taxInfo
   } = req.body;
-  let hashedPassword = await bcrypt.hash(password,10);
-  password = hashedPassword;
 
-  const employeeExists = await Employee.findOne({ idNumber });
+  const employeeExists = await Employee.findOne({ $or: [{ idNumber }, { email }] });
 
   if (employeeExists) {
     res.status(400);
-    throw new Error('الموظف موجود بالفعل');
+    throw new Error('الموظف موجود بالفعل (رقم الهوية أو البريد الإلكتروني مستخدم)');
   }
 
   const employee = await Employee.create({
     fullName,
-    jobTitle,
+    position,
     department,
     salary,
     idNumber,
     email,
-    password,
     phone,
     address,
-    emergencyContact
+    emergencyContact,
+    bankAccount,
+    taxInfo
   });
 
-  if (employee) {
-    res.status(201).json(employee);
-  } else {
-    res.status(400);
-    throw new Error('بيانات الموظف غير صالحة');
-  }
+  res.status(201).json(employee);
 });
-
-
-// login for employees 
-const loginEmployee = asyncHandler(
-  async (req, res)=> {
-    try {
-      let employee = await Employee.findOne({email: req.body.email});
-      if (!employee) res.status(400).json({message: "email or password not correct"});
-      let isMatch = await bcrypt.compare(req.body.password, employee.password);
-      if(!isMatch) res.status(400).json({message: "email or password not correct"});
-      let token = jwt.sign({_id: employee._id, role: "employee"}, process.env.SECRET_KEY);
-      res.status(200).json({message: "Login successfully", token: token});
-    } catch (error) {
-      res.status(400).json({message: error.message});
-    }
-  }
-)
-
-
-
 
 // @desc    الحصول على موظف بواسطة ID
 // @route   GET /api/employees/:id
@@ -86,7 +65,7 @@ const getEmployeeById = asyncHandler(async (req, res) => {
 
   if (employee) {
     // التحقق من الصلاحيات (الإداري أو HR أو الموظف نفسه)
-    if (req.user.role === 'admin' || req.user.role === 'hr' || req.user.employeeId.toString() === req.params.id) {
+    if (req.user.role === 'admin' || req.user.role === 'hr' || req.user.employeeId?.toString() === req.params.id) {
       res.json(employee);
     } else {
       res.status(403);
@@ -100,24 +79,23 @@ const getEmployeeById = asyncHandler(async (req, res) => {
 
 // @desc    تحديث بيانات موظف
 // @route   PUT /api/employees/:id
-// @access  Private/Admin-HR
+// @access  Private/Admin/HR
 const updateEmployee = asyncHandler(async (req, res) => {
   const employee = await Employee.findById(req.params.id);
 
   if (employee) {
     employee.fullName = req.body.fullName || employee.fullName;
-    employee.jobTitle = req.body.jobTitle || employee.jobTitle;
+    employee.position = req.body.position || employee.position;
     employee.department = req.body.department || employee.department;
     employee.salary = req.body.salary || employee.salary;
     employee.email = req.body.email || employee.email;
-    employee.password = req.body.password || employee.password;
     employee.phone = req.body.phone || employee.phone;
     employee.address = req.body.address || employee.address;
     employee.emergencyContact = req.body.emergencyContact || employee.emergencyContact;
+    employee.bankAccount = req.body.bankAccount || employee.bankAccount;
+    employee.taxInfo = req.body.taxInfo || employee.taxInfo;
     employee.status = req.body.status || employee.status;
-
-    let hashedPassword = await bcrypt.hash(employee.password, 10);
-    employee.password = hashedPassword;
+    employee.leaveBalance = req.body.leaveBalance || employee.leaveBalance;
 
     const updatedEmployee = await employee.save();
     res.json(updatedEmployee);
@@ -131,11 +109,10 @@ const updateEmployee = asyncHandler(async (req, res) => {
 // @route   DELETE /api/employees/:id
 // @access  Private/Admin
 const deleteEmployee = asyncHandler(async (req, res) => {
-  let {id} = req.params
-  const employee = await Employee.findById(id);
+  const employee = await Employee.findById(req.params.id);
 
   if (employee) {
-    await Employee.findByIdAndDelete(id);
+    await employee.remove();
     res.json({ message: 'تم حذف الموظف بنجاح' });
   } else {
     res.status(404);
@@ -143,11 +120,32 @@ const deleteEmployee = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    الحصول على تقرير الموظفين
+// @route   GET /api/employees/reports/summary
+// @access  Private/Admin/HR
+const getEmployeesSummary = asyncHandler(async (req, res) => {
+  const totalEmployees = await Employee.countDocuments();
+  const activeEmployees = await Employee.countDocuments({ status: 'active' });
+  const departments = await Employee.aggregate([
+    { $group: { _id: '$department', count: { $sum: 1 } } }
+  ]);
+  const totalSalary = await Employee.aggregate([
+    { $group: { _id: null, total: { $sum: '$salary' } } }
+  ]);
+
+  res.json({
+    totalEmployees,
+    activeEmployees,
+    departments,
+    totalMonthlySalary: totalSalary[0]?.total || 0
+  });
+});
+
 module.exports = {
   getAllEmployees,
-  loginEmployee,
   createEmployee,
   getEmployeeById,
   updateEmployee,
-  deleteEmployee
+  deleteEmployee,
+  getEmployeesSummary
 };

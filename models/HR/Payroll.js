@@ -4,21 +4,21 @@ const payrollSchema = new mongoose.Schema({
   employee: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Employee',
-    required: true
+    required: [true, 'الرجاء تحديد الموظف']
   },
   month: {
     type: Number,
-    required: true,
+    required: [true, 'الرجاء تحديد الشهر'],
     min: 1,
     max: 12
   },
   year: {
     type: Number,
-    required: true
+    required: [true, 'الرجاء تحديد السنة']
   },
   basicSalary: {
     type: Number,
-    required: true
+    required: [true, 'الرجاء إدخال الراتب الأساسي']
   },
   allowances: {
     type: Number,
@@ -40,23 +40,41 @@ const payrollSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  lateDays: {
+    type: Number,
+    default: 0
+  },
+  leaveDays: {
+    type: Number,
+    default: 0
+  },
   netSalary: {
     type: Number,
-    required: true
+    required: [true, 'الرجاء إدخال صافي الراتب']
   },
   status: {
     type: String,
-    enum: ['pending', 'processed', 'paid'],
-    default: 'pending'
+    enum: ['draft', 'processed', 'paid'],
+    default: 'draft'
   },
   paymentDate: {
     type: Date
   },
   notes: {
     type: String
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'userDB',
+    required: true
+  },
+  approvedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'userDB'
   }
 }, { timestamps: true });
 
+// لمنع تكرار كشف الرواتب لنفس الموظف في نفس الشهر
 payrollSchema.index({ employee: 1, month: 1, year: 1 }, { unique: true });
 
 module.exports = mongoose.model('Payroll', payrollSchema);

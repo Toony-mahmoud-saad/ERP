@@ -4,18 +4,14 @@ const leaveController = require('../../controllers/HR/leaveController');
 const authorize = require('../../middlewar/authorize');
 
 router.route('/')
-  .get(authorize, leaveController.getAllLeaves)
-
-  router.route('/:id')
-  .post(leaveController.createLeaveRequest);
-
-router.route('/employee/:id')
-  .get(authorize, leaveController.getEmployeeLeaves);
+  .post(authorize, leaveController.createLeaveRequest)
+  .get(authorize, leaveController.getAllLeaves);
 
 router.route('/:id')
-  .put(leaveController.updateLeaveRequest)
-  .delete(leaveController.deleteLeaveRequest);
+  .put(authorize, leaveController.updateLeaveRequest)
+  .delete(authorize, leaveController.deleteLeaveRequest);
 
 router.put('/:id/approve', authorize, leaveController.approveLeaveRequest);
+router.get('/employee/:id', authorize, leaveController.getEmployeeLeaves);
 
 module.exports = router;

@@ -3,43 +3,44 @@ const mongoose = require('mongoose');
 const employeeSchema = new mongoose.Schema({
   fullName: {
     type: String,
-    required: true
+    required: [true, 'الرجاء إدخال اسم الموظف بالكامل']
   },
-  jobTitle: {
+  position: {
     type: String,
-    required: true
+    required: [true, 'الرجاء إدخال المسمى الوظيفي']
   },
   department: {
     type: String,
-    required: true
+    required: [true, 'الرجاء إدخال القسم']
   },
   hireDate: {
     type: Date,
+    required: [true, 'الرجاء إدخال تاريخ التعيين'],
     default: Date.now
   },
   salary: {
     type: Number,
-    required: true
+    required: [true, 'الرجاء إدخال الراتب الأساسي'],
+    min: [0, 'الراتب لا يمكن أن يكون سلبياً']
   },
   idNumber: {
     type: String,
-    required: true,
+    required: [true, 'الرجاء إدخال رقم الهوية'],
     unique: true
   },
   email: {
     type: String,
-    required: true,
-  },
-  password: {
-    type : String,
-    required: true
+    required: [true, 'الرجاء إدخال البريد الإلكتروني'],
+    unique: true,
+    match: [/.+@.+\..+/, 'الرجاء إدخال بريد إلكتروني صحيح']
   },
   phone: {
     type: String,
-    required: true
+    required: [true, 'الرجاء إدخال رقم الهاتف']
   },
   address: {
-    type: String
+    type: String,
+    required: [true, 'الرجاء إدخال العنوان']
   },
   emergencyContact: {
     name: String,
@@ -48,17 +49,31 @@ const employeeSchema = new mongoose.Schema({
   },
   leaveBalance: {
     type: Number,
-    default: 21 // إجازة سنوية 21 يوم
+    default: 21,
+    min: [0, 'رصيد الإجازات لا يمكن أن يكون سلبياً']
   },
   status: {
     type: String,
-    enum: ['active', 'inactive', 'suspended'],
+    enum: ['active', 'on_leave', 'suspended', 'terminated'],
     default: 'active'
+  },
+  bankAccount: {
+    bankName: String,
+    accountNumber: String,
+    iban: String
+  },
+  taxInfo: {
+    taxNumber: String,
+    exemption: Boolean
   },
   createdAt: {
     type: Date,
     default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
   }
-});
+}, { timestamps: true });
 
 module.exports = mongoose.model('Employee', employeeSchema);

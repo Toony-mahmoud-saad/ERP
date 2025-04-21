@@ -7,8 +7,12 @@ const asyncHandler = require('express-async-handler');
 // @access  Private
 const createLeaveRequest = asyncHandler(async (req, res) => {
   const { startDate, endDate, type, reason } = req.body;
-  let {id} = req.params
-  const employeeId = id;
+  const employeeId = req.user.employeeId;
+
+  if (!employeeId) {
+    res.status(400);
+    throw new Error('لا يوجد موظف مرتبط بهذا الحساب');
+  }
 
   const employee = await Employee.findById(employeeId);
   if (!employee) {
@@ -29,8 +33,8 @@ const createLeaveRequest = asyncHandler(async (req, res) => {
 
   const leaveRequest = await Leave.create({
     employee: employeeId,
-    startDate,
-    endDate,
+    startDate: start,
+    endDate: end,
     type,
     reason,
     days,
@@ -42,7 +46,7 @@ const createLeaveRequest = asyncHandler(async (req, res) => {
 
 // @desc    الموافقة/رفض طلب الإجازة
 // @route   PUT /api/leaves/:id/approve
-// @access  Private/Admin-HR
+// @access  Private/Admin/HR
 const approveLeaveRequest = asyncHandler(async (req, res) => {
   const { status } = req.body;
 
@@ -58,11 +62,11 @@ const approveLeaveRequest = asyncHandler(async (req, res) => {
   }
 
   leaveRequest.status = status;
-  leaveRequest.approvedBy = req.user._id;
+  leaveRequest.approvedBy = req.user.id;
 
   // إذا تمت الموافقة وكانت إجازة مدفوعة، نقوم بخصمها من رصيد الموظف
   if (status === 'approved' && leaveRequest.type === 'annual') {
-    const employee = await Employee.findById(leaveRequest.employee);
+    const employee = await Employee.findById(leaveRequest.employee._id);
     employee.leaveBalance -= leaveRequest.days;
     await employee.save();
   }
@@ -73,12 +77,12 @@ const approveLeaveRequest = asyncHandler(async (req, res) => {
 
 // @desc    الحصول على طلبات الإجازة لموظف
 // @route   GET /api/leaves/employee/:id
-// @access  Private/Admin-HR أو الموظف نفسه
+// @access  Private
 const getEmployeeLeaves = asyncHandler(async (req, res) => {
   const employeeId = req.params.id;
 
   // التحقق من الصلاحيات
-  if (req.user.role !== 'admin' && req.user.role !== 'hr' && req.user.employeeId.toString() !== employeeId) {
+  if (req.user.role !== 'admin' && req.user.role !== 'hr' && req.user.employeeId?.toString() !== employeeId) {
     res.status(403);
     throw new Error('غير مصرح لك بالوصول إلى هذه البيانات');
   }
@@ -89,16 +93,24 @@ const getEmployeeLeaves = asyncHandler(async (req, res) => {
 
 // @desc    الحصول على جميع طلبات الإجازة (للإداريين)
 // @route   GET /api/leaves
-// @access  Private/Admin-HR
+// @access  Private/Admin/HR
 const getAllLeaves = asyncHandler(async (req, res) => {
-  const { status, type } = req.query;
+  const { status, type, startDate, endDate } = req.query;
   let filter = {};
 
   if (status) filter.status = status;
   if (type) filter.type = type;
 
+  if (startDate && endDate) {
+    filter.$or = [
+      { startDate: { $lte: new Date(endDate) }, endDate: { $gte: new Date(startDate) } },
+      { startDate: { $gte: new Date(startDate), $lte: new Date(endDate) } }
+    ];
+  }
+
   const leaves = await Leave.find(filter)
     .populate('employee', 'fullName department')
+    .populate('approvedBy', 'name')
     .sort({ createdAt: -1 });
   
   res.json(leaves);
@@ -106,7 +118,7 @@ const getAllLeaves = asyncHandler(async (req, res) => {
 
 // @desc    تحديث طلب الإجازة
 // @route   PUT /api/leaves/:id
-// @access  Private/Admin-HR أو الموظف نفسه (إذا كان الطلب معلقًا)
+// @access  Private
 const updateLeaveRequest = asyncHandler(async (req, res) => {
   const { startDate, endDate, type, reason } = req.body;
 
@@ -125,8 +137,8 @@ const updateLeaveRequest = asyncHandler(async (req, res) => {
     throw new Error('غير مصرح لك بتحديث هذا الطلب');
   }
 
-  if (startDate) leaveRequest.startDate = startDate;
-  if (endDate) leaveRequest.endDate = endDate;
+  if (startDate) leaveRequest.startDate = new Date(startDate);
+  if (endDate) leaveRequest.endDate = new Date(endDate);
   if (type) leaveRequest.type = type;
   if (reason) leaveRequest.reason = reason;
 
@@ -143,16 +155,25 @@ const updateLeaveRequest = asyncHandler(async (req, res) => {
 
 // @desc    حذف طلب الإجازة
 // @route   DELETE /api/leaves/:id
-// @access  Private/Admin-HR أو الموظف نفسه (إذا كان الطلب معلقًا)
+// @access  Private
 const deleteLeaveRequest = asyncHandler(async (req, res) => {
-  try {
-    let {id} = req.params;
-    let leave = await Leave.findByIdAndDelete(id);
-    res.json({ message: 'تم حذف طلب الإجازة بنجاح' });
-  } catch (error) {
-    res.status(400).json({message: error.message})
+  const leaveRequest = await Leave.findById(req.params.id);
+  if (!leaveRequest) {
+    res.status(404);
+    throw new Error('طلب الإجازة غير موجود');
   }
 
+  // التحقق من الصلاحيات
+  const isEmployeeOwner = req.user.employeeId && req.user.employeeId.toString() === leaveRequest.employee.toString();
+  const isAdminOrHR = req.user.role === 'admin' || req.user.role === 'hr';
+
+  if (!isAdminOrHR && (!isEmployeeOwner || leaveRequest.status !== 'pending')) {
+    res.status(403);
+    throw new Error('غير مصرح لك بحذف هذا الطلب');
+  }
+
+  await leaveRequest.remove();
+  res.json({ message: 'تم حذف طلب الإجازة بنجاح' });
 });
 
 module.exports = {

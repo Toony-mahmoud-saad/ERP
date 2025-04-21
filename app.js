@@ -26,7 +26,6 @@ app.use('/api/attendance', require('./routes/HR/attendanceRoutes'));
 app.use('/api/leaves', require('./routes/HR/leaveRoutes'));
 app.use('/api/payroll', require('./routes/HR/payrollRoutes'));
 
-
 //! Inventory Routes
 app.use('/api/products', require('./routes/Inventory/productRoutes'));
 app.use('/api/transactions', require('./routes/Inventory/transactionRoutes'));
