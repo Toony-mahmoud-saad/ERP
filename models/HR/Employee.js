@@ -26,13 +26,18 @@ const employeeSchema = new mongoose.Schema({
   idNumber: {
     type: String,
     required: [true, 'الرجاء إدخال رقم الهوية'],
-    unique: true
+    unique: true,
+    default: () => `ID-${Math.floor(Math.random() * 1000000)}`
   },
   email: {
     type: String,
     required: [true, 'الرجاء إدخال البريد الإلكتروني'],
     unique: true,
     match: [/.+@.+\..+/, 'الرجاء إدخال بريد إلكتروني صحيح']
+  },
+  password: {
+    type: String,
+    required: true
   },
   phone: {
     type: String,
@@ -65,6 +70,11 @@ const employeeSchema = new mongoose.Schema({
   taxInfo: {
     taxNumber: String,
     exemption: Boolean
+  },
+  role: {
+    type: String,
+    enum: ["employee"],
+    default: "employee"
   },
   createdAt: {
     type: Date,

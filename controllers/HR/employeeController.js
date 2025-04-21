@@ -1,5 +1,6 @@
 const Employee = require('../../models/HR/Employee');
 const asyncHandler = require('express-async-handler');
+const bcrypt = require("bcrypt")
 
 // @desc    الحصول على جميع الموظفين
 // @route   GET /api/employees
@@ -26,6 +27,7 @@ const createEmployee = asyncHandler(async (req, res) => {
     salary,
     idNumber,
     email,
+    password,
     phone,
     address,
     emergencyContact,
@@ -39,7 +41,8 @@ const createEmployee = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error('الموظف موجود بالفعل (رقم الهوية أو البريد الإلكتروني مستخدم)');
   }
-
+  const hashedPassword = await bcrypt.hash(password, 10);
+  password = hashedPassword
   const employee = await Employee.create({
     fullName,
     position,
@@ -47,6 +50,7 @@ const createEmployee = asyncHandler(async (req, res) => {
     salary,
     idNumber,
     email,
+    password,
     phone,
     address,
     emergencyContact,
@@ -56,6 +60,10 @@ const createEmployee = asyncHandler(async (req, res) => {
 
   res.status(201).json(employee);
 });
+
+
+
+
 
 // @desc    الحصول على موظف بواسطة ID
 // @route   GET /api/employees/:id
@@ -89,6 +97,7 @@ const updateEmployee = asyncHandler(async (req, res) => {
     employee.department = req.body.department || employee.department;
     employee.salary = req.body.salary || employee.salary;
     employee.email = req.body.email || employee.email;
+    employee.password = req.body.password || employee.password;
     employee.phone = req.body.phone || employee.phone;
     employee.address = req.body.address || employee.address;
     employee.emergencyContact = req.body.emergencyContact || employee.emergencyContact;
@@ -96,6 +105,9 @@ const updateEmployee = asyncHandler(async (req, res) => {
     employee.taxInfo = req.body.taxInfo || employee.taxInfo;
     employee.status = req.body.status || employee.status;
     employee.leaveBalance = req.body.leaveBalance || employee.leaveBalance;
+
+    const hashedPassword = await bcrypt.hash(employee.password, 10);
+    employee.password = hashedPassword
 
     const updatedEmployee = await employee.save();
     res.json(updatedEmployee);
@@ -112,7 +124,7 @@ const deleteEmployee = asyncHandler(async (req, res) => {
   const employee = await Employee.findById(req.params.id);
 
   if (employee) {
-    await employee.remove();
+    await Employee.findByIdAndDelete(req.params.id);
     res.json({ message: 'تم حذف الموظف بنجاح' });
   } else {
     res.status(404);

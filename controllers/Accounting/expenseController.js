@@ -16,7 +16,7 @@ const createExpense = asyncHandler(async (req, res) => {
     reference,
     taxDeductible: taxDeductible || false,
     notes,
-    recordedBy: req.user.id
+    recordedBy: req.user._id
   });
 
   res.status(201).json(expense);
@@ -92,7 +92,7 @@ const deleteExpense = asyncHandler(async (req, res) => {
   const expense = await Expense.findById(req.params.id);
 
   if (expense) {
-    await expense.remove();
+    await Expense.findByIdAndDelete(req.params.id);
     res.json({ message: 'تم حذف المصروف بنجاح' });
   } else {
     res.status(404);

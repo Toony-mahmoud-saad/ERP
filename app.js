@@ -34,7 +34,7 @@ app.use("/api/suppliers", require("./routes/Inventory/supplierRoutes"));
 
 //! Accounting Routes
 app.use("/api/invoices", require("./routes/Accounting/invoiceRoutes"));
-app.use("/api/transactions", require("./routes/Accounting/transactionRoutes"));
+app.use("/api/accounting/transactions", require("./routes/Accounting/transactionRoutes"));
 app.use("/api/expenses", require("./routes/Accounting/expenseRoutes"));
 app.use("/api/reports", require("./routes/Accounting/reportRoutes"));
 app.use("/api/customers", require("./routes/Accounting/customerRoutes"));

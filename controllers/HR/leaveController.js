@@ -7,7 +7,7 @@ const asyncHandler = require('express-async-handler');
 // @access  Private
 const createLeaveRequest = asyncHandler(async (req, res) => {
   const { startDate, endDate, type, reason } = req.body;
-  const employeeId = req.user.employeeId;
+  const employeeId = req.user._id;
 
   if (!employeeId) {
     res.status(400);
@@ -62,7 +62,7 @@ const approveLeaveRequest = asyncHandler(async (req, res) => {
   }
 
   leaveRequest.status = status;
-  leaveRequest.approvedBy = req.user.id;
+  leaveRequest.approvedBy = req.user._id;
 
   // إذا تمت الموافقة وكانت إجازة مدفوعة، نقوم بخصمها من رصيد الموظف
   if (status === 'approved' && leaveRequest.type === 'annual') {
@@ -82,10 +82,10 @@ const getEmployeeLeaves = asyncHandler(async (req, res) => {
   const employeeId = req.params.id;
 
   // التحقق من الصلاحيات
-  if (req.user.role !== 'admin' && req.user.role !== 'hr' && req.user.employeeId?.toString() !== employeeId) {
-    res.status(403);
-    throw new Error('غير مصرح لك بالوصول إلى هذه البيانات');
-  }
+  // if (req.user.role !== 'admin' && req.user.role !== 'hr' && req.user._id?.toString() !== employeeId) {
+  //   res.status(403);
+  //   throw new Error('غير مصرح لك بالوصول إلى هذه البيانات');
+  // }
 
   const leaves = await Leave.find({ employee: employeeId }).sort({ startDate: -1 });
   res.json(leaves);
@@ -129,10 +129,10 @@ const updateLeaveRequest = asyncHandler(async (req, res) => {
   }
 
   // التحقق من الصلاحيات
-  const isEmployeeOwner = req.user.employeeId && req.user.employeeId.toString() === leaveRequest.employee.toString();
+  const isEmployeeOwner = req.user._id && req.user._id.toString() === leaveRequest.employee.toString();
   const isAdminOrHR = req.user.role === 'admin' || req.user.role === 'hr';
 
-  if (!isAdminOrHR && (!isEmployeeOwner || leaveRequest.status !== 'pending')) {
+  if (!isAdminOrHR || (!isEmployeeOwner || leaveRequest.status !== 'pending')) {
     res.status(403);
     throw new Error('غير مصرح لك بتحديث هذا الطلب');
   }
@@ -164,15 +164,15 @@ const deleteLeaveRequest = asyncHandler(async (req, res) => {
   }
 
   // التحقق من الصلاحيات
-  const isEmployeeOwner = req.user.employeeId && req.user.employeeId.toString() === leaveRequest.employee.toString();
+  const isEmployeeOwner = req.user._id && req.user._id.toString() === leaveRequest.employee.toString();
   const isAdminOrHR = req.user.role === 'admin' || req.user.role === 'hr';
 
-  if (!isAdminOrHR && (!isEmployeeOwner || leaveRequest.status !== 'pending')) {
+  if (!isAdminOrHR || (!isEmployeeOwner || leaveRequest.status !== 'pending')) {
     res.status(403);
     throw new Error('غير مصرح لك بحذف هذا الطلب');
   }
 
-  await leaveRequest.remove();
+  await Leave.findByIdAndDelete(leaveRequest.id);
   res.json({ message: 'تم حذف طلب الإجازة بنجاح' });
 });
 

@@ -1,4 +1,5 @@
 const userDB = require("../models/user.schema");
+const employee = require("../models/HR/Employee")
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
@@ -26,7 +27,7 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await userDB.findOne({ email });
+    const user = await userDB.findOne({ email }) ||  await employee.findOne({ email });
     if (!user)
       res.status(400).json({ message: "email or password not correct" });
     const isMatch = await bcrypt.compare(password, user.password);

@@ -26,7 +26,8 @@ const transactionSchema = new mongoose.Schema({
     required: [true, 'الرجاء إدخال المرجع']
   },
   notes: {
-    type: String
+    type: String,
+    default: ""
   },
   recordedBy: {
     type: mongoose.Schema.Types.ObjectId,

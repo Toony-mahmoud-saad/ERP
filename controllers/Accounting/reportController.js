@@ -1,4 +1,5 @@
 const Invoice = require('../../models/Accounting/Invoice');
+const Transaction = require('../../models/Accounting/Transaction');
 const Expense = require('../../models/Accounting/Expense');
 const FinancialReport = require('../../models/Accounting/FinancialReport');
 const asyncHandler = require('express-async-handler');
@@ -64,7 +65,7 @@ const generateProfitLossReport = asyncHandler(async (req, res) => {
     startDate: new Date(startDate),
     endDate: new Date(endDate),
     data: reportData,
-    generatedBy: req.user.id
+    generatedBy: req.user._id
   });
 
   res.status(201).json(report);
@@ -159,7 +160,7 @@ const generateCashFlowReport = asyncHandler(async (req, res) => {
     startDate: new Date(startDate),
     endDate: new Date(endDate),
     data: reportData,
-    generatedBy: req.user.id
+    generatedBy: req.user._id
   });
 
   res.status(201).json(report);

@@ -55,7 +55,7 @@ const createPayroll = asyncHandler(async (req, res) => {
     netSalary,
     notes,
     status: 'processed',
-    createdBy: req.user.id
+    createdBy: req.user._id
   });
 
   res.status(201).json(payroll);
@@ -68,7 +68,7 @@ const getEmployeePayrolls = asyncHandler(async (req, res) => {
   const employeeId = req.params.id;
 
   // التحقق من الصلاحيات
-  if (req.user.role !== 'admin' && req.user.role !== 'hr' && req.user.role !== 'accountant' && req.user.employeeId?.toString() !== employeeId) {
+  if (req.user.role !== 'admin' || req.user.role !== 'hr' || req.user.role !== 'accountant' || req.user.employeeId?.toString() !== employeeId) {
     res.status(403);
     throw new Error('غير مصرح لك بالوصول إلى هذه البيانات');
   }
@@ -94,7 +94,7 @@ const getPayrollById = asyncHandler(async (req, res) => {
   }
 
   // التحقق من الصلاحيات
-  const isEmployeeOwner = req.user.employeeId && req.user.employeeId.toString() === payroll.employee._id.toString();
+  const isEmployeeOwner = req.user._id && req.user._id.toString() === payroll.employee._id.toString();
   const isAdminOrHR = req.user.role === 'admin' || req.user.role === 'hr' || req.user.role === 'accountant';
 
   if (!isAdminOrHR && !isEmployeeOwner) {
@@ -118,7 +118,7 @@ const markPayrollAsPaid = asyncHandler(async (req, res) => {
 
   payroll.status = 'paid';
   payroll.paymentDate = new Date();
-  payroll.approvedBy = req.user.id;
+  payroll.approvedBy = req.user._id;
   await payroll.save();
 
   res.json(payroll);
@@ -177,7 +177,7 @@ const generateMonthlyPayrolls = asyncHandler(async (req, res) => {
         lateDays,
         netSalary: salaryAfterAbsence,
         status: 'processed',
-        createdBy: req.user.id
+        createdBy: req.user._id
       });
 
       generatedPayrolls.push(payroll);

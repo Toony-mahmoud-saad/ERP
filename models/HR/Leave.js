@@ -38,7 +38,8 @@ const leaveSchema = new mongoose.Schema({
     ref: 'userDB'
   },
   notes: {
-    type: String
+    type: String,
+    default: ""
   },
   createdAt: {
     type: Date,

@@ -112,7 +112,7 @@ const deleteInvoice = asyncHandler(async (req, res) => {
       throw new Error('لا يمكن حذف فاتورة بها مدفوعات مسجلة');
     }
 
-    await invoice.remove();
+    await Invoice.findByIdAndDelete(invoice.id);
     res.json({ message: 'تم حذف الفاتورة بنجاح' });
   } else {
     res.status(404);

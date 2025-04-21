@@ -1,3 +1,4 @@
+const Invoice = require('../../models/Accounting/Invoice');
 const Transaction = require('../../models/Accounting/Transaction');
 const asyncHandler = require('express-async-handler');
 
@@ -33,7 +34,7 @@ const getAllTransactions = asyncHandler(async (req, res) => {
     })
     .populate('recordedBy', 'name')
     .sort({ date: -1 });
-
+    
   res.json(transactions);
 });
 
@@ -126,7 +127,7 @@ const deleteTransaction = asyncHandler(async (req, res) => {
   }
 
   await invoice.save();
-  await transaction.remove();
+  await Transaction.findByIdAndDelete(req.params.id);
 
   res.json({ message: 'تم حذف الحركة المالية بنجاح' });
 });
