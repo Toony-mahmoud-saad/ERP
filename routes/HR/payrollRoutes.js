@@ -9,6 +9,8 @@ router.route('/')
 router.route('/employee/:id')
   .get(authorize, payrollController.getEmployeePayrolls);
 
+router.route('')
+  .get(authorize, payrollController.getAllPayroll);
 router.route('/:id')
   .get(authorize, payrollController.getPayrollById);
 

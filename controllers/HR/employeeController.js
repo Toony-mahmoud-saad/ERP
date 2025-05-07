@@ -1,6 +1,6 @@
-const Employee = require('../../models/HR/Employee');
-const asyncHandler = require('express-async-handler');
-const bcrypt = require("bcrypt")
+const Employee = require("../../models/HR/Employee");
+const asyncHandler = require("express-async-handler");
+const bcrypt = require("bcrypt");
 
 // @desc    الحصول على جميع الموظفين
 // @route   GET /api/employees
@@ -20,7 +20,7 @@ const getAllEmployees = asyncHandler(async (req, res) => {
 // @route   POST /api/employees
 // @access  Private/Admin/HR
 const createEmployee = asyncHandler(async (req, res) => {
-  const {
+  let {
     fullName,
     position,
     department,
@@ -32,17 +32,21 @@ const createEmployee = asyncHandler(async (req, res) => {
     address,
     emergencyContact,
     bankAccount,
-    taxInfo
+    taxInfo,
   } = req.body;
 
-  const employeeExists = await Employee.findOne({ $or: [{ idNumber }, { email }] });
+  const employeeExists = await Employee.findOne({
+    $or: [{ idNumber }, { email }],
+  });
 
   if (employeeExists) {
     res.status(400);
-    throw new Error('الموظف موجود بالفعل (رقم الهوية أو البريد الإلكتروني مستخدم)');
+    throw new Error(
+      "الموظف موجود بالفعل (رقم الهوية أو البريد الإلكتروني مستخدم)"
+    );
   }
   const hashedPassword = await bcrypt.hash(password, 10);
-  password = hashedPassword
+  password = hashedPassword;
   const employee = await Employee.create({
     fullName,
     position,
@@ -55,15 +59,11 @@ const createEmployee = asyncHandler(async (req, res) => {
     address,
     emergencyContact,
     bankAccount,
-    taxInfo
+    taxInfo,
   });
 
   res.status(201).json(employee);
 });
-
-
-
-
 
 // @desc    الحصول على موظف بواسطة ID
 // @route   GET /api/employees/:id
@@ -73,15 +73,19 @@ const getEmployeeById = asyncHandler(async (req, res) => {
 
   if (employee) {
     // التحقق من الصلاحيات (الإداري أو HR أو الموظف نفسه)
-    if (req.user.role === 'admin' || req.user.role === 'hr' || req.user.employeeId?.toString() === req.params.id) {
+    if (
+      req.user.role === "admin" ||
+      req.user.role === "hr" ||
+      req.user.employeeId?.toString() === req.params.id
+    ) {
       res.json(employee);
     } else {
       res.status(403);
-      throw new Error('غير مصرح لك بالوصول إلى هذه البيانات');
+      throw new Error("غير مصرح لك بالوصول إلى هذه البيانات");
     }
   } else {
     res.status(404);
-    throw new Error('الموظف غير موجود');
+    throw new Error("الموظف غير موجود");
   }
 });
 
@@ -100,20 +104,21 @@ const updateEmployee = asyncHandler(async (req, res) => {
     employee.password = req.body.password || employee.password;
     employee.phone = req.body.phone || employee.phone;
     employee.address = req.body.address || employee.address;
-    employee.emergencyContact = req.body.emergencyContact || employee.emergencyContact;
+    employee.emergencyContact =
+      req.body.emergencyContact || employee.emergencyContact;
     employee.bankAccount = req.body.bankAccount || employee.bankAccount;
     employee.taxInfo = req.body.taxInfo || employee.taxInfo;
     employee.status = req.body.status || employee.status;
     employee.leaveBalance = req.body.leaveBalance || employee.leaveBalance;
 
     const hashedPassword = await bcrypt.hash(employee.password, 10);
-    employee.password = hashedPassword
+    employee.password = hashedPassword;
 
     const updatedEmployee = await employee.save();
     res.json(updatedEmployee);
   } else {
     res.status(404);
-    throw new Error('الموظف غير موجود');
+    throw new Error("الموظف غير موجود");
   }
 });
 
@@ -125,10 +130,10 @@ const deleteEmployee = asyncHandler(async (req, res) => {
 
   if (employee) {
     await Employee.findByIdAndDelete(req.params.id);
-    res.json({ message: 'تم حذف الموظف بنجاح' });
+    res.json({ message: "تم حذف الموظف بنجاح" });
   } else {
     res.status(404);
-    throw new Error('الموظف غير موجود');
+    throw new Error("الموظف غير موجود");
   }
 });
 
@@ -137,19 +142,19 @@ const deleteEmployee = asyncHandler(async (req, res) => {
 // @access  Private/Admin/HR
 const getEmployeesSummary = asyncHandler(async (req, res) => {
   const totalEmployees = await Employee.countDocuments();
-  const activeEmployees = await Employee.countDocuments({ status: 'active' });
+  const activeEmployees = await Employee.countDocuments({ status: "active" });
   const departments = await Employee.aggregate([
-    { $group: { _id: '$department', count: { $sum: 1 } } }
+    { $group: { _id: "$department", count: { $sum: 1 } } },
   ]);
   const totalSalary = await Employee.aggregate([
-    { $group: { _id: null, total: { $sum: '$salary' } } }
+    { $group: { _id: null, total: { $sum: "$salary" } } },
   ]);
 
   res.json({
     totalEmployees,
     activeEmployees,
     departments,
-    totalMonthlySalary: totalSalary[0]?.total || 0
+    totalMonthlySalary: totalSalary[0]?.total || 0,
   });
 });
 
@@ -159,5 +164,5 @@ module.exports = {
   getEmployeeById,
   updateEmployee,
   deleteEmployee,
-  getEmployeesSummary
+  getEmployeesSummary,
 };

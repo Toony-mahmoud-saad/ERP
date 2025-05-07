@@ -1,10 +1,13 @@
 const mongoose = require('mongoose');
-
+// فواتير
 const invoiceSchema = new mongoose.Schema({
   invoiceNumber: {
     type: String,
     required: [true, 'الرجاء إدخال رقم الفاتورة'],
-    unique: true
+    unique: true,
+    default: function () {
+      return `INV-${Date.now()}`;
+    }
   },
   type: {
     type: String,

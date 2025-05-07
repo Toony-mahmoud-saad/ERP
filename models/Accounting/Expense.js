@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-
+// نفقات
 const expenseSchema = new mongoose.Schema({
   description: {
     type: String,

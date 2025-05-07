@@ -97,7 +97,7 @@ const updateCustomer = asyncHandler(async (req, res) => {
 // @route   GET /api/customers/:id/invoices
 // @access  Private/Admin/Accountant
 const getCustomerInvoices = asyncHandler(async (req, res) => {
-  const invoices = await Invoice.find({ 
+  const invoices = await Invoice.find({
     party: req.params.id,
     partyType: 'Customer'
   }).sort({ date: -1 });
@@ -109,7 +109,7 @@ const getCustomerInvoices = asyncHandler(async (req, res) => {
 // @route   GET /api/customers/:id/transactions
 // @access  Private/Admin/Accountant
 const getCustomerTransactions = asyncHandler(async (req, res) => {
-  const invoices = await Invoice.find({ 
+  const invoices = await Invoice.find({
     party: req.params.id,
     partyType: 'Customer'
   }).select('_id');

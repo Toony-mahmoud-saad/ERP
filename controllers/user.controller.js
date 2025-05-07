@@ -27,20 +27,34 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await userDB.findOne({ email }) ||  await employee.findOne({ email });
-    if (!user)
-      res.status(400).json({ message: "email or password not correct" });
+    const user = await userDB.findOne({ email }) || await employee.findOne({ email });
+    
+    if (!user) {
+      return res.status(400).json({ message: "Email or password not correct" });
+    }
+    
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch)
-      res.status(400).json({ message: "email or password not correct" });
+
+    if (!isMatch) { 
+      return res.status(400).json({ message: "Email or password not correct" });
+    }
+    
     const token = jwt.sign(
       { _id: user._id, role: user.role },
       process.env.SECRET_KEY
     );
-    res.status(200).json({ message: "login successfully", token: token });
+
+    return res.status(200).json({ 
+      message: "Login successfully", 
+      token: token 
+    });
+    
   } catch (error) {
-    console.log("Exist error 💢 : ", error);
-    res.status(400).json({ message: error.message });
+    console.error("Login error:", error);
+    return res.status(400).json({ 
+      message: "An error occurred during login",
+      error: error.message 
+    });
   }
 };
 

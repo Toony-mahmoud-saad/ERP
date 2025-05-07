@@ -38,7 +38,7 @@ const updateAlertStatus = asyncHandler(async (req, res) => {
   alert.status = status || alert.status;
   
   if (status === 'resolved' || status === "ignored") {
-    alert.resolvedBy = req.user.id;
+    alert.resolvedBy = req.user._id;
     alert.resolvedAt = new Date();
   } else if (status === 'active') {
     alert.resolvedBy = null;
@@ -50,14 +50,14 @@ const updateAlertStatus = asyncHandler(async (req, res) => {
 });
 
 // @desc    حل جميع التنبيهات النشطة
-// @route   PUT /api/alerts/resolve-all
+// @route   PUT /api/alerts/resolve_all
 // @access  Private/Admin/Inventory Keeper
 const resolveAllAlerts = asyncHandler(async (req, res) => {
   const result = await InventoryAlert.updateMany(
     { status: 'active' },
     { 
       status: 'resolved',
-      resolvedBy: req.user.id,
+      resolvedBy: req.user._id,
       resolvedAt: new Date()
     }
   );

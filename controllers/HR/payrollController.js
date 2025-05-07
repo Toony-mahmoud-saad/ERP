@@ -1,25 +1,30 @@
-const Payroll = require('../../models/HR/Payroll');
-const Employee = require('../../models/HR/Employee');
-const Attendance = require('../../models/HR/Attendance');
-const asyncHandler = require('express-async-handler');
+const Payroll = require("../../models/HR/Payroll");
+const Employee = require("../../models/HR/Employee");
+const Attendance = require("../../models/HR/Attendance");
+const asyncHandler = require("express-async-handler");
 
 // @desc    إنشاء كشف رواتب لموظف
 // @route   POST /api/payroll
 // @access  Private/Admin/HR/Accountant
 const createPayroll = asyncHandler(async (req, res) => {
-  const { employeeId, month, year, allowances, deductions, tax, bonus, notes } = req.body;
+  const { employeeId, month, year, allowances, deductions, tax, bonus, notes } =
+    req.body;
 
   const employee = await Employee.findById(employeeId);
   if (!employee) {
     res.status(404);
-    throw new Error('الموظف غير موجود');
+    throw new Error("الموظف غير موجود");
   }
 
   // التحقق من عدم وجود كشف رواتب مسبق لنفس الشهر
-  const payrollExists = await Payroll.findOne({ employee: employeeId, month, year });
+  const payrollExists = await Payroll.findOne({
+    employee: employeeId,
+    month,
+    year,
+  });
   if (payrollExists) {
     res.status(400);
-    throw new Error('تم إنشاء كشف الرواتب لهذا الشهر بالفعل');
+    throw new Error("تم إنشاء كشف الرواتب لهذا الشهر بالفعل");
   }
 
   // حساب أيام الغياب والتأخير
@@ -28,18 +33,27 @@ const createPayroll = asyncHandler(async (req, res) => {
 
   const attendanceRecords = await Attendance.find({
     employee: employeeId,
-    date: { $gte: startDate, $lte: endDate }
+    date: { $gte: startDate, $lte: endDate },
   });
 
-  const absentDays = attendanceRecords.filter(record => record.status === 'absent').length;
-  const lateDays = attendanceRecords.filter(record => record.status === 'late').length;
+  const absentDays = attendanceRecords.filter(
+    (record) => record.status === "absent"
+  ).length;
+  const lateDays = attendanceRecords.filter(
+    (record) => record.status === "late"
+  ).length;
 
   // حساب الراتب الأساسي بعد خصم أيام الغياب
   const dailySalary = employee.salary / 30; // افتراضيًا 30 يوم في الشهر
-  const salaryAfterAbsence = employee.salary - (absentDays * dailySalary);
+  const salaryAfterAbsence = employee.salary - absentDays * dailySalary;
 
   // حساب صافي الراتب
-  const netSalary = salaryAfterAbsence + (allowances || 0) - (deductions || 0) - (tax || 0) + (bonus || 0);
+  const netSalary =
+    salaryAfterAbsence +
+    (allowances || 0) -
+    (deductions || 0) -
+    (tax || 0) +
+    (bonus || 0);
 
   const payroll = await Payroll.create({
     employee: employeeId,
@@ -54,8 +68,8 @@ const createPayroll = asyncHandler(async (req, res) => {
     lateDays,
     netSalary,
     notes,
-    status: 'processed',
-    createdBy: req.user._id
+    status: "processed",
+    createdBy: req.user._id,
   });
 
   res.status(201).json(payroll);
@@ -68,15 +82,51 @@ const getEmployeePayrolls = asyncHandler(async (req, res) => {
   const employeeId = req.params.id;
 
   // التحقق من الصلاحيات
-  if (req.user.role !== 'admin' || req.user.role !== 'hr' || req.user.role !== 'accountant' || req.user.employeeId?.toString() !== employeeId) {
-    res.status(403);
-    throw new Error('غير مصرح لك بالوصول إلى هذه البيانات');
-  }
+  // if (req.user.role !== 'admin' || req.user.role !== 'hr' || req.user.role !== 'accountant' || req.user.employeeId?.toString() !== employeeId) {
+  //   res.status(403);
+  //   throw new Error('غير مصرح لك بالوصول إلى هذه البيانات');
+  // }
 
-  const payrolls = await Payroll.find({ employee: employeeId })
-    .sort({ year: -1, month: -1 });
-  
+  const payrolls = await Payroll.find({ employee: employeeId }).sort({
+    year: -1,
+    month: -1,
+  });
+
   res.json(payrolls);
+});
+
+// @desc    الحصول على جميع كشوف الرواتب
+// @route   GET /api/payroll/
+// @access  Private Admin / HR / Accountant
+const getAllPayroll = asyncHandler(async (req, res) => {
+  try {
+    if (
+      req.user.role == "admin" ||
+      req.user.role == "hr" ||
+      req.user.role == "accountant"
+    ) {
+      const { month, year, status } = req.query;
+
+      if (!month || !year) {
+        res.status(400);
+        throw new Error("الرجاء إدخال الشهر والسنة");
+      }
+      const payroll = await Payroll.find({
+        month,
+        year,
+        status
+      })
+        .populate("employee", "fullName position department")
+        .populate("createdBy", "name")
+        .populate("approvedBy", "name");
+
+      res.json(payroll);
+    } else {
+      res.status(403).json("Not authorized");
+    }
+  } catch (error) {
+    res.status(400).json({ Message: error.message });
+  }
 });
 
 // @desc    الحصول على كشف رواتب محدد
@@ -84,22 +134,26 @@ const getEmployeePayrolls = asyncHandler(async (req, res) => {
 // @access  Private
 const getPayrollById = asyncHandler(async (req, res) => {
   const payroll = await Payroll.findById(req.params.id)
-    .populate('employee', 'fullName position department')
-    .populate('createdBy', 'name')
-    .populate('approvedBy', 'name');
+    .populate("employee", "fullName position department")
+    .populate("createdBy", "name")
+    .populate("approvedBy", "name");
 
   if (!payroll) {
     res.status(404);
-    throw new Error('كشف الرواتب غير موجود');
+    throw new Error("كشف الرواتب غير موجود");
   }
 
   // التحقق من الصلاحيات
-  const isEmployeeOwner = req.user._id && req.user._id.toString() === payroll.employee._id.toString();
-  const isAdminOrHR = req.user.role === 'admin' || req.user.role === 'hr' || req.user.role === 'accountant';
+  const isEmployeeOwner =
+    req.user._id && req.user._id.toString() === payroll.employee._id.toString();
+  const isAdminOrHR =
+    req.user.role === "admin" ||
+    req.user.role === "hr" ||
+    req.user.role === "accountant";
 
   if (!isAdminOrHR && !isEmployeeOwner) {
     res.status(403);
-    throw new Error('غير مصرح لك بالوصول إلى هذه البيانات');
+    throw new Error("غير مصرح لك بالوصول إلى هذه البيانات");
   }
 
   res.json(payroll);
@@ -113,10 +167,10 @@ const markPayrollAsPaid = asyncHandler(async (req, res) => {
 
   if (!payroll) {
     res.status(404);
-    throw new Error('كشف الرواتب غير موجود');
+    throw new Error("كشف الرواتب غير موجود");
   }
 
-  payroll.status = 'paid';
+  payroll.status = "paid";
   payroll.paymentDate = new Date();
   payroll.approvedBy = req.user._id;
   await payroll.save();
@@ -132,18 +186,18 @@ const generateMonthlyPayrolls = asyncHandler(async (req, res) => {
 
   if (!month || !year) {
     res.status(400);
-    throw new Error('الرجاء إدخال الشهر والسنة');
+    throw new Error("الرجاء إدخال الشهر والسنة");
   }
 
-  const employees = await Employee.find({ status: 'active' });
+  const employees = await Employee.find({ status: "active" });
   const generatedPayrolls = [];
 
   for (const employee of employees) {
     // التحقق من عدم وجود كشف رواتب مسبق
-    const payrollExists = await Payroll.findOne({ 
-      employee: employee._id, 
-      month, 
-      year 
+    const payrollExists = await Payroll.findOne({
+      employee: employee._id,
+      month,
+      year,
     });
 
     if (!payrollExists) {
@@ -153,15 +207,19 @@ const generateMonthlyPayrolls = asyncHandler(async (req, res) => {
 
       const attendanceRecords = await Attendance.find({
         employee: employee._id,
-        date: { $gte: startDate, $lte: endDate }
+        date: { $gte: startDate, $lte: endDate },
       });
 
-      const absentDays = attendanceRecords.filter(record => record.status === 'absent').length;
-      const lateDays = attendanceRecords.filter(record => record.status === 'late').length;
+      const absentDays = attendanceRecords.filter(
+        (record) => record.status === "absent"
+      ).length;
+      const lateDays = attendanceRecords.filter(
+        (record) => record.status === "late"
+      ).length;
 
       // حساب الراتب الأساسي بعد خصم أيام الغياب
       const dailySalary = employee.salary / 30;
-      const salaryAfterAbsence = employee.salary - (absentDays * dailySalary);
+      const salaryAfterAbsence = employee.salary - absentDays * dailySalary;
 
       // إنشاء كشف الرواتب (بدون بدلات أو خصومات إضافية)
       const payroll = await Payroll.create({
@@ -176,8 +234,8 @@ const generateMonthlyPayrolls = asyncHandler(async (req, res) => {
         absentDays,
         lateDays,
         netSalary: salaryAfterAbsence,
-        status: 'processed',
-        createdBy: req.user._id
+        status: "processed",
+        createdBy: req.user._id,
       });
 
       generatedPayrolls.push(payroll);
@@ -186,7 +244,7 @@ const generateMonthlyPayrolls = asyncHandler(async (req, res) => {
 
   res.status(201).json({
     message: `تم إنشاء ${generatedPayrolls.length} كشف رواتب`,
-    payrolls: generatedPayrolls
+    payrolls: generatedPayrolls,
   });
 });
 
@@ -198,10 +256,10 @@ const getMonthlyPayrollReport = asyncHandler(async (req, res) => {
 
   if (!month || !year) {
     res.status(400);
-    throw new Error('الرجاء إدخال الشهر والسنة');
+    throw new Error("الرجاء إدخال الشهر والسنة");
   }
 
-  let employeeFilter = { status: 'active' };
+  let employeeFilter = { status: "active" };
   if (department) {
     employeeFilter.department = department;
   }
@@ -215,14 +273,14 @@ const getMonthlyPayrollReport = asyncHandler(async (req, res) => {
     totalTax: 0,
     totalBonus: 0,
     totalNetSalary: 0,
-    employees: []
+    employees: [],
   };
 
   for (const employee of employees) {
     const payroll = await Payroll.findOne({
       employee: employee._id,
       month,
-      year
+      year,
     });
 
     if (payroll) {
@@ -244,7 +302,7 @@ const getMonthlyPayrollReport = asyncHandler(async (req, res) => {
         tax: payroll.tax,
         bonus: payroll.bonus,
         netSalary: payroll.netSalary,
-        status: payroll.status
+        status: payroll.status,
       });
     }
   }
@@ -255,8 +313,9 @@ const getMonthlyPayrollReport = asyncHandler(async (req, res) => {
 module.exports = {
   createPayroll,
   getEmployeePayrolls,
+  getAllPayroll,
   getPayrollById,
   markPayrollAsPaid,
   generateMonthlyPayrolls,
-  getMonthlyPayrollReport
+  getMonthlyPayrollReport,
 };

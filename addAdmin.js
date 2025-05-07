@@ -1,54 +1,66 @@
-const express = require("express");
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcrypt");
-const User = require("./models/user.schema"); // Adjust path as needed
-const dotenv = require("dotenv");
-dotenv.config();
+const mongoose = require('mongoose');
+require('dotenv').config();
+const bcrypt = require('bcrypt');
 
-const addAdmin = async () => {
+// Connect to MongoDB
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log('Connected to MongoDB'))
+  .catch(err => console.error('Connection error:', err));
+
+//! User model
+const User = require('./models/user.schema');
+
+// Admin data
+let adminData = {
+  name: 'admin',
+  email: 'admin@erp.com',
+  phoneNumber: "1234567890",
+  password: 'Admin@123', // This will be hashed
+  role: 'admin'
+};
+
+// Function to create admin user
+const createAdmin = async () => {
   try {
-    const adminData = {
-      name: "admin",
-      email: "admin@erp.com",
-      password: "admin123",
-      phoneNumber: "1234567890",
-      role: "admin",
-    };
-
     // Check if admin already exists
     const existingAdmin = await User.findOne({ email: adminData.email });
     if (existingAdmin) {
-      // create token
-      const token = jwt.sign(
-      { _id: existingAdmin._id, name: existingAdmin.name, role: existingAdmin.role },
-      process.env.SECRET_KEY
-      );
-      console.log("Admin already exists, and his token\n"+token);
-      return;
+      console.log('Admin user already exists:', existingAdmin);
+      process.exit(0);
     }
 
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(adminData.password, 10);
-
-    // Create the admin user
-    const admin = new User({
-      ...adminData,
-      password: hashedPassword,
-    });
-
+    // Create new admin
+    const admin = new User(adminData);
+    hashedPassword = await bcrypt.hash(admin.password,10);
+    admin.password = hashedPassword;
     await admin.save();
 
-    // create token
-    const token = jwt.sign(
-      { _id: admin._id, name: admin.name, role: admin.role },
-      process.env.SECRET_KEY
-    );
+    console.log('Admin user created successfully:', {
+      _id: admin._id,
+      name: admin.name,
+      email: admin.email,
+      role: admin.role
+    });
 
-    console.log("Admin user created successfully.");
-    console.log("token: ", token);
+    process.exit(0);
   } catch (error) {
-    console.error("Error creating admin user:", error);
+    console.error('Error creating admin user:', error);
+    process.exit(1);
   }
 };
 
-module.exports = addAdmin;
+// Run the script
+createAdmin();
+
+
+//! how run  
+
+// node addAdmin.js
+
+
+
+
+
+
+
+

@@ -9,8 +9,8 @@ const createInvoice = asyncHandler(async (req, res) => {
   const { type, party, partyType, items, subtotal, discount, paymentMethod, notes, dueDate } = req.body;
 
   // توليد رقم فاتورة تلقائي
-  const lastInvoice = await Invoice.findOne().sort({ createdAt: -1 });
-  const invoiceNumber = `INV-${Date.now().toString().slice(-6)}`;
+  // const lastInvoice = await Invoice.findOne().sort({ createdAt: -1 });
+  // const invoiceNumber = `INV-${Date.now().toString().slice(-6)}`;
 
   const invoice = await Invoice.create({
     invoiceNumber,

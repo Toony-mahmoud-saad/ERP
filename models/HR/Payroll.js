@@ -54,7 +54,7 @@ const payrollSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['draft', 'processed', 'paid'],
+    enum: ['draft', 'processed', 'paid'], // ['مسودة'، 'معالجة'، 'مدفوع']
     default: 'draft'
   },
   paymentDate: {

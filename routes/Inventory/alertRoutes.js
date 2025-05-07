@@ -9,7 +9,7 @@ router.route('/')
 router.route('/:id')
   .put(authorize, alertController.updateAlertStatus);
 
-router.route('/resolve-all')
+router.route('/resolve_all')
   .put(authorize, alertController.resolveAllAlerts);
 
 module.exports = router;

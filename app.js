@@ -1,10 +1,10 @@
 //! Libraries
 require("dotenv").config();
 const express = require("express");
+const cors = require("cors");
 
 //! Files import
 const DataBaseConnect = require("./config/db");
-const admin = require("./addAdmin");
 const userRoute = require("./routes/user.route");
 
 //! Code to run the App
@@ -14,8 +14,9 @@ app.use(express.json());
 //! Connect to Mongo Data Base
 DataBaseConnect();
 
-//! add the admin
-admin();
+//! Enable CORS for all origins
+app.use(cors());
+
 
 //! Routers authintecation
 app.use("/", userRoute);

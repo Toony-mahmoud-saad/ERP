@@ -7,7 +7,7 @@ const financialReportSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['profit_loss', 'balance_sheet', 'cash_flow', 'tax', 'custom'],
+    enum: ['profit_loss', 'balance_sheet', 'cash_flow', 'tax', 'custom'], // ['الربح_الخسارة'، 'الميزانية العمومية'، 'التدفق النقدي'، 'الضريبة'، 'العرف']
     required: [true, 'الرجاء تحديد نوع التقرير']
   },
   startDate: {
